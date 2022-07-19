@@ -37,6 +37,7 @@ Usage:
     .option('d', {alias: 'dry-run', describe: 'Skip publishing', type: 'boolean', group: 'Options'})
     .option('h', {alias: 'help', group: 'Options'})
     .option('v', {alias: 'version', group: 'Options'})
+    .option('m', {alias: 'modifier', group: 'Options'})
     .strict(false)
     .exitProcess(false);
 

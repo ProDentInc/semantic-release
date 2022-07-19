@@ -1,4 +1,4 @@
-const {pick} = require('lodash');
+const {pick, isObjectLike} = require('lodash');
 const marked = require('marked');
 const envCi = require('env-ci');
 const hookStd = require('hook-std');
@@ -9,6 +9,7 @@ const hideSensitive = require('./lib/hide-sensitive');
 const getConfig = require('./lib/get-config');
 const verify = require('./lib/verify');
 const getNextVersion = require('./lib/get-next-version');
+const getModifier = require('./lib/get-modifier');
 const getCommits = require('./lib/get-commits');
 const getLastRelease = require('./lib/get-last-release');
 const getReleaseToAdd = require('./lib/get-release-to-add');
@@ -172,18 +173,35 @@ async function run(context, plugins) {
     return context.releases.length > 0 ? {releases: context.releases} : false;
   }
 
+  const modifier = await getModifier(context);
+
   context.nextRelease = nextRelease;
-  nextRelease.version = getNextVersion(context);
+  
+  const version = getNextVersion(context);
+
+  if (isObjectLike(modifier)) {
+    logger.log(`Using modifier "${modifier.name}"`);
+    nextRelease.version = modifier.version(context, version);
+  } else {
+    nextRelease.version = version;
+  }
+
   nextRelease.gitTag = makeTag(options.tagFormat, nextRelease.version);
   nextRelease.name = nextRelease.gitTag;
 
-  if (context.branch.type !== 'prerelease' && !semver.satisfies(nextRelease.version, context.branch.range)) {
-    throw getError('EINVALIDNEXTVERSION', {
-      ...context,
-      validBranches: context.branches.filter(
-        ({type, accept}) => type !== 'prerelease' && accept.includes(nextRelease.type)
-      ),
-    });
+  if (context.branch.type !== 'prerelease') {
+    const versionTest = modifier?.versionTest
+    
+    if (versionTest?.skip === true) {
+      logger.info('Version testing skipped');
+    } else if (!semver.satisfies(nextRelease.version, context.branch.range, versionTest?.options)) {
+      throw getError('EINVALIDNEXTVERSION', {
+        ...context,
+        validBranches: context.branches.filter(
+          ({type, accept}) => type !== 'prerelease' && accept.includes(nextRelease.type)
+        ),
+      });
+    }
   }
 
   await plugins.verifyRelease(context);
