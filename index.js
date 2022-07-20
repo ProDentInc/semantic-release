@@ -176,7 +176,6 @@ async function run(context, plugins) {
   const modifier = await getModifier(context);
 
   context.nextRelease = nextRelease;
-  
   const version = getNextVersion(context);
 
   if (isObjectLike(modifier)) {
@@ -190,8 +189,8 @@ async function run(context, plugins) {
   nextRelease.name = nextRelease.gitTag;
 
   if (context.branch.type !== 'prerelease') {
-    const versionTest = modifier?.versionTest
-    
+    const versionTest = modifier?.versionTest;
+
     if (versionTest?.skip === true) {
       logger.info('Version testing skipped');
     } else if (!semver.satisfies(nextRelease.version, context.branch.range, versionTest?.options)) {

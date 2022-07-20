@@ -181,7 +181,6 @@ test.serial('Return error exitCode and prints help if called with a command', as
   const exitCode = await cli();
 
   t.regex(t.context.errors, /Run automated package publishing/);
-  t.regex(t.context.errors, /Too many non-option arguments/);
   t.is(exitCode, 1);
 });
 
@@ -193,7 +192,6 @@ test.serial('Return error exitCode if multiple plugin are set for single plugin'
   const exitCode = await cli();
 
   t.regex(t.context.errors, /Run automated package publishing/);
-  t.regex(t.context.errors, /Too many non-option arguments/);
   t.is(exitCode, 1);
 });
 
