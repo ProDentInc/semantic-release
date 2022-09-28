@@ -1,4 +1,4 @@
-const {pick, isObjectLike} = require('lodash');
+const {pick, isObjectLike, isFunction } = require('lodash');
 const marked = require('marked');
 const envCi = require('env-ci');
 const hookStd = require('hook-std');
@@ -148,7 +148,16 @@ async function run(context, plugins) {
     throw new AggregateError(errors);
   }
 
-  context.lastRelease = getLastRelease(context);
+  context.modifier = await getModifier(context);
+
+  context.lastRelease = isObjectLike(context.modifier) && isFunction(context.modifier.lastRelease)
+    ? context.modifier.lastRelease(context)
+    : undefined;
+
+  if (!context.lastRelease) {
+    context.lastRelease = getLastRelease(context)
+  }
+
   if (context.lastRelease.gitHead) {
     context.lastRelease.gitHead = await getTagHead(context.lastRelease.gitHead, {cwd, env});
   }
@@ -173,14 +182,12 @@ async function run(context, plugins) {
     return context.releases.length > 0 ? {releases: context.releases} : false;
   }
 
-  const modifier = await getModifier(context);
-
   context.nextRelease = nextRelease;
   const version = getNextVersion(context);
 
-  if (isObjectLike(modifier)) {
-    logger.log(`Using modifier "${modifier.name}"`);
-    nextRelease.version = modifier.version(context, version);
+  if (isObjectLike(context.modifier) && isFunction(context.modifier.version)) {
+    logger.log(`Using modifier "${context.modifier.name}"`);
+    nextRelease.version = context.modifier.version(context, version);
   } else {
     nextRelease.version = version;
   }
@@ -189,7 +196,7 @@ async function run(context, plugins) {
   nextRelease.name = nextRelease.gitTag;
 
   if (context.branch.type !== 'prerelease') {
-    const versionTest = modifier?.versionTest;
+    const versionTest = context.modifier?.versionTest;
 
     if (versionTest?.skip === true) {
       logger.info('Version testing skipped');

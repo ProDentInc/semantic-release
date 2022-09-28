@@ -1,8 +1,8 @@
 {
   "name": "@prodentinc/semantic-release",
   "description": "Automated semver compliant package publishing",
-  "version": "0.1.1",
-  "author": "Stephan Bönnemann <stephan@boennemann.me> (http://boennemann.me)",
+  "version": "0.1.2",
+  "author": "Stephan Bönnemann <stephan@boennemann.me> (https://boennemann.me)",
   "ava": {
     "files": [
       "test/**/*.test.js"
